@@ -7,6 +7,7 @@ import threading
 import aiohttp
 
 from game import Game
+from heuristic import MonteCarlo
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -26,6 +27,7 @@ class ApiTester:
                 params={'team_name': num}
         ) as resp:
             res = (await resp.json())['data']
+            self.monte_carlo = MonteCarlo(self._game, res['color'], 3, )
             self._player = {
                 'color': res['color'],
                 'token': res['token']
