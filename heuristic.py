@@ -6,13 +6,14 @@ import time
 
 class MonteCarlo:
 
-    def __init__(self, checkers, color, sim_time=5, exp_time=1, bias=0.1):
+    def __init__(self, checkers, color, sim_time=1, exp_time=1, bias=0.1):
         self._color = color
         self._oposite_color = 'BLACK' if color == 'RED' else 'RED'
         self._sim_time = sim_time  # Simulation time
         self._state_node = {}  # Game state tree
         self._exp_time = exp_time  # Exploration value
         self._bias = bias  # Pre-tuned bias constant
+        self._checkers = checkers
 
     def static_concentric_val(self, game_state, king_coefficient=20):
 
@@ -43,12 +44,12 @@ class MonteCarlo:
 
         for i, row in enumerate(board.get_board()):
             for j, char in enumerate(row):
-                if char == self.color.lower():
+                if char == self._color.lower():
                     play += 3 + concentric_coefficient(board, (i, j))
                 # if char == color.upper():
                 #     play += king_coefficient
 
-                if char == self.checkers.opponent(self.color).lower():
+                if char == self._checkers.opponent(self._color).lower():
                     oppo += 3 + concentric_coefficient(board, (i, j))
                 # if char == self.checkers.opponent(color).upper():
                 #     oppo += king_coefficient
@@ -64,10 +65,10 @@ class MonteCarlo:
 
         results = {}
 
-        if game_state in self.state_node:
-            root = self.state_node[game_state]
+        if game_state in self._state_node:
+            root = self._state_node[game_state]
         else:
-            n_children = len(self.checkers.allowed_moves(game_state))
+            n_children = len(self._checkers.get_possible_moves())
             root = Node(game_state, None, n_children)
 
         # Remove its parent as it is now considered our root level node.
@@ -76,7 +77,11 @@ class MonteCarlo:
 
         sim_count = 0
         now = time.time()
-        while time.time() - now < self.sim_time and root.moves_unfinished > 0:
+        while time.time() - now < self._sim_time and root.moves_unfinished > 0:
+            print("time")
+            print(time.time() - now)
+            print("/time")
+
             picked_node = self.tree_policy(root)
             result, actions = self.simulate(picked_node.game_state)
             self.back_prop(picked_node, result, actions, player=picked_node.game_state[1])
@@ -211,10 +216,15 @@ class MonteCarlo:
                     return .5, actions
 
             moves = state.get_possible_moves()
-            picked = random.choice(moves)
+
+            try:
+                picked = random.choice(moves)
+            except BaseException:
+                print("e")
+
             actions[self._color].append(picked)
 
-            state = state.move(picked)
+            state.move(picked)
 
 
 # REWRITTEN
@@ -223,7 +233,7 @@ class Node:
     def __init__(self, game_state, move, amount_children):
 
         self.game_state = game_state
-        self.color = game_state.whoose_turn()
+        self.color = game_state.whose_turn()
         self.plays = 0
         self.wins = 0
         self.amount_of_plays = 0

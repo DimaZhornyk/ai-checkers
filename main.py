@@ -2,12 +2,12 @@ import asyncio
 import logging
 import random
 import sys
-import threading
 
 import aiohttp
 
 from game import Game
 from heuristic import MonteCarlo
+from minimax import make_best_move
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -27,6 +27,7 @@ class ApiTester:
                 params={'team_name': num}
         ) as resp:
             res = (await resp.json())['data']
+            print(res)
             self.monte_carlo = MonteCarlo(self._game, res['color'], 3, )
             self._player = {
                 'color': res['color'],
@@ -96,7 +97,11 @@ class ApiTester:
         await self._session.close()
 
     def heuristic(self):
-        return random.choice(self._game.get_possible_moves())
+        is_red = self._player['color'] == "RED"
+        print('is_red')
+        print(is_red)
+        print('/is_res')
+        return make_best_move(1 if is_red else 2, self._game.board) if is_red else random.choice(self._game.get_possible_moves())
 
 
 async def start_bot(player_num):
