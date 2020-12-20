@@ -1,78 +1,69 @@
 import copy
-import math
-import random
-from datetime import datetime
-import time
 import multiprocessing as mp
-from checkers.game import Game
+import random
 
-from node import Node
+from heuristics import *
 
 
 class Minimax:
 
-    def __init__(self, player_num):
-        self.turn_limit = 100
-        self.turn_count = 0
-        self.player_num = player_num
-        self._evaluation_start = None
-        self._move_time = 4
+    def mp_new_move(self, game, depth, move, maximizing_player):
+        alpha = float("-inf")
+        new_game = copy.deepcopy(game)
+        new_game.move(move)
+        best_move = None
+        beta = self.minimax(new_game, depth, maximizing_player, float('-inf'), float('inf'))
+        if beta > alpha:
+            alpha = beta
+            best_move = move
+        return alpha, best_move
 
-    def best_move(self, game: Game, player_num: int):
-        self._evaluation_start = datetime.now()
-        root = Node(game, player_num, None)
-        q = mp.Queue()
-        q.put(root)
+    def best_move(self, game, depth):
         cpu_count = int(mp.cpu_count() - 1)
-        pool = mp.Pool(cpu_count, self.mp_child_creation, (q,))
-        time.sleep(self._move_time)
-        pool.terminate()
-        move = self.find_best_move(root)
-        return move
+        with mp.Pool(processes=cpu_count) as pool:
+            res = pool.starmap(self.mp_new_move, [(game, depth - 1, move, True) for move in game.get_possible_moves()])
+        m_val = [0, random.choice(game.get_possible_moves())]
+        for item in res:
+            if item[0] > m_val[0]:
+                m_val = item
+        return m_val[1]
 
-    def mp_child_creation(self, queue):
-        while True:
-            node = queue.get()
-            queue.put(random.randint(0, 1000))
-            for move in node.board.get_possible_moves():
-                c_game = copy.deepcopy(node.board)
-                c_game.move(move)
-                new_node = Node(c_game, self.player_num, move)
-                node.add_children(new_node)
-                if c_game.is_over():
-                    continue
-                queue.put(new_node)
+    def minimax(self, game, depth, isMaximizingPlayer, alpha, beta):
+        if depth == 0 or game.is_over():
+            return self.evaluate(self.count_heuristics(game))
 
-    def find_best_move(self, node: Node):
-        best_val = self.minimax(node, 0, True, float('-inf'), float('inf'))
-        # TODO extract move which leads to child node
-        for c in node.children:
-            if c.weight == best_val:
-                return c.move
-
-    def minimax(self, node, depth, isMaximizingPlayer, alpha, beta):
-        if len(node.children) == 0:
-            return node.evaluate(node.count_heuristics())
-        
         if isMaximizingPlayer:
-            best_val = float('-inf')
-            for child in node.children:
-                value = self.minimax(child, depth + 1, False, alpha, beta)
-                best_val = max(best_val, value)
-                node.weight = best_val
-                alpha = max(alpha, best_val)
-                if beta <= alpha:
+            value = float('-inf')
+            for move in game.get_possible_moves():
+                new_game = copy.deepcopy(game)
+                new_game.move(move)
+                value = max(self.minimax(new_game, depth - 1, False, alpha, beta), value)
+                alpha = max(alpha, value)
+                if alpha >= beta:
                     break
-            return best_val
-
+            return value
         else:
-            best_val = float('inf')
-            for child in node.children:
-                value = self.minimax(child, depth + 1, True, alpha, beta)
-                best_val = min(best_val, value)
-                node.weight = best_val
-                beta = min(beta, best_val)
+            value = float('inf')
+            for move in game.get_possible_moves():
+                new_game = copy.deepcopy(game)
+                new_game.move(move)
+                value = min(self.minimax(new_game, depth - 1, False, alpha, beta), value)
+                alpha = min(alpha, value)
                 if beta <= alpha:
                     break
-            return best_val
+            return value
 
+    def evaluate(self, heuristics):
+        res = sum(heuristics) / len(heuristics)
+        return res
+
+    def count_heuristics(self, game):
+        board = game.board
+        player_num = game.whose_turn()
+        heurs = [h_peices_num(board, player_num),
+                 h_kings_num(board, player_num),
+                 h_safe_pieces(board, player_num),
+                 h_safe_kings(board, player_num),
+                 h_num_of_movable_pawns(board, player_num),
+                 h_num_of_movable_kings(board, player_num)]
+        return heurs

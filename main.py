@@ -2,6 +2,7 @@ import asyncio
 import logging
 import random
 import sys
+import time
 
 import aiohttp
 
@@ -20,12 +21,13 @@ class ApiTester:
         self._loop = loop
         self._last_move = []
 
-    async def _prepare_player(self, num):
+    async def _prepare_player(self, name):
         async with self._session.post(
                 f'{self._api_url}/game',
-                params={'team_name': num}
+                params={'team_name': name}
         ) as resp:
             res = (await resp.json())['data']
+            self._player_num = 1 if res['color'] == 'RED' else 2
             self._player = {
                 'color': res['color'],
                 'token': res['token']
@@ -48,7 +50,7 @@ class ApiTester:
             return (await resp.json())['data']
 
     async def _play_game(self):
-        self.minimax = Minimax(self._player_num)
+        self.minimax = Minimax()
         current_game_progress = await self._get_game()
         is_finished = current_game_progress['is_finished']
         is_started = current_game_progress['is_started']
@@ -69,7 +71,9 @@ class ApiTester:
                 self._last_move = moves
 
             if self._player['color'] == current_game_progress['whose_turn']:
+                start = time.time()
                 move = self.heuristic()
+                print("TOTAL TIME FOR TURN: ", time.time() - start)
                 logging.info(f"New move: {move}")
                 await self._make_move(move)
 
@@ -99,12 +103,7 @@ class ApiTester:
         await self._session.close()
 
     def heuristic(self):
-        is_red = self._player['color'] == "RED"
-        print('is_red')
-        print(is_red)
-        print('/is_res')
-        return self.minimax.make_best_move(1 if is_red else 2, self._game.board) if is_red else random.choice(
-            self._game.get_possible_moves())
+        return self.minimax.best_move(self._game, 5)
 
 
 async def start_bot(player_name):
