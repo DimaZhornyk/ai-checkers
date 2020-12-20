@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 class ApiTester:
     def __init__(self, loop, player_num):
-        self._api_url = 'http://localhost:8081'
+        self._api_url = 'http://docker.for.win.localhost:8081'
         self._game = Game()
         self._session = aiohttp.ClientSession()
         self._player_num = player_num
@@ -68,7 +68,7 @@ class ApiTester:
 
                 for move in moves:
                     self._game.move(move)
-                self._last_move = moves
+                self._last_move = last_move
 
             if self._player['color'] == current_game_progress['whose_turn']:
                 start = time.time()
@@ -81,7 +81,7 @@ class ApiTester:
             is_finished = current_game_progress['is_finished']
             is_started = current_game_progress['is_started']
 
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.2)
 
     async def start(self):
         logging.info('API Tester initialized, test will start in 2 secs')
@@ -103,7 +103,7 @@ class ApiTester:
         await self._session.close()
 
     def heuristic(self):
-        return self.minimax.best_move(self._game, 5)
+        return self.minimax.best_move(self._game, 3)
 
 
 async def start_bot(player_name):

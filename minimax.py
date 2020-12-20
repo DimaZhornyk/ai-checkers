@@ -54,16 +54,21 @@ class Minimax:
             return value
 
     def evaluate(self, heuristics):
-        res = sum(heuristics) / len(heuristics)
+        res = 0
+        coefficients = [5, 7, 2, 2, 1, 1]
+        for i in range(len(heuristics)):
+            res += heuristics[i] * coefficients[i]
+        # res = sum(heuristics) / len(heuristics)
         return res
 
     def count_heuristics(self, game):
         board = game.board
         player_num = game.whose_turn()
-        heurs = [h_peices_num(board, player_num),
-                 h_kings_num(board, player_num),
-                 h_safe_pieces(board, player_num),
-                 h_safe_kings(board, player_num),
+        # Number of pawns
+        heurs = [h_peices_num(board, player_num),  # Number of pawns
+                 h_kings_num(board, player_num),  # Number of kings
+                 h_safe_pieces(board, player_num),  # Number of attacking pawns (i.e. positioned in three topmost rows)
+                 h_safe_kings(board, player_num),  #
                  h_num_of_movable_pawns(board, player_num),
                  h_num_of_movable_kings(board, player_num)]
         return heurs

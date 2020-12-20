@@ -3,6 +3,9 @@ from functools import reduce
 from checkers.board import Board
 
 safe_positions = [1, 2, 3, 4, 5, 12, 13, 20, 21, 28, 29, 30, 31, 32]
+central_positions = [10, 11, 14, 15, 18, 19, 22, 23]
+central_diagonal = []
+
 player_promotion_line_mapping = {
     1: [29, 39, 31, 32],
     2: [1, 2, 3, 4]
@@ -50,3 +53,20 @@ def h_num_of_movable_kings(board: Board, player_num):
 def h_num_of_unoccupied_cells_on_promotion_line(board: Board, player_num):
     return (4 - reduce((lambda count, piece: count + (
         1 if piece.position in player_promotion_line_mapping[player_num] else 0)), board.pieces, 0)) / 4
+
+
+def h_num_of_attacking_pawns(board: Board, player_num):
+    pass
+
+
+def h_num_of_centrally_positioned_pawns(board: Board, player_num):
+    reduce(
+        lambda count, piece: count + (1 if piece.player == player_num and piece.position in central_positions else 0),
+        board.pieces, 0) / len(central_positions)
+
+
+def h_num_of_centrally_positioned_kings(board: Board, player_num):
+    return reduce(
+        lambda count, piece: count + (
+            1 if piece.player == player_num and piece.position in central_positions and piece.king
+            else 0), board.pieces, 0) / len(central_positions)
