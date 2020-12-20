@@ -6,8 +6,7 @@ import sys
 import aiohttp
 
 from game import Game
-from heuristic import MonteCarlo
-from minimax import make_best_move
+from minimax import Minimax
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -27,8 +26,6 @@ class ApiTester:
                 params={'team_name': num}
         ) as resp:
             res = (await resp.json())['data']
-            print(res)
-            self.monte_carlo = MonteCarlo(self._game, res['color'], 3, )
             self._player = {
                 'color': res['color'],
                 'token': res['token']
@@ -51,6 +48,7 @@ class ApiTester:
             return (await resp.json())['data']
 
     async def _play_game(self):
+        self.minimax = Minimax(self._player_num)
         current_game_progress = await self._get_game()
         is_finished = current_game_progress['is_finished']
         is_started = current_game_progress['is_started']
@@ -59,12 +57,16 @@ class ApiTester:
 
             if current_game_progress['last_move'] is not None and \
                     current_game_progress['last_move']['last_moves'] != self._last_move:
-
                 last_move = current_game_progress['last_move']['last_moves']
                 logging.info(f"Move from server: {last_move}")
+                moves = []
+                for m in last_move:
+                    if m not in self._last_move:
+                        moves.append(m)
 
-                self._game.move(last_move[-1])
-                self._last_move = current_game_progress['last_move']['last_moves']
+                for move in moves:
+                    self._game.move(move)
+                self._last_move = moves
 
             if self._player['color'] == current_game_progress['whose_turn']:
                 move = self.heuristic()
@@ -101,18 +103,19 @@ class ApiTester:
         print('is_red')
         print(is_red)
         print('/is_res')
-        return make_best_move(1 if is_red else 2, self._game.board) if is_red else random.choice(self._game.get_possible_moves())
+        return self.minimax.make_best_move(1 if is_red else 2, self._game.board) if is_red else random.choice(
+            self._game.get_possible_moves())
 
 
-async def start_bot(player_num):
+async def start_bot(player_name):
     loop = asyncio.get_event_loop()
-    player = ApiTester(loop, player_num)
+    player = ApiTester(loop, player_name)
     await player.start()
 
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
-    if sys.argv.__len__() > 1 and sys.argv[1] == '1':
-        loop.run_until_complete(start_bot(1))
+    if sys.argv.__len__() > 1 and sys.argv[1]:
+        loop.run_until_complete(start_bot(sys.argv[1]))
     else:
-        loop.run_until_complete(start_bot(2))
+        loop.run_until_complete(start_bot("BUBILDA"))

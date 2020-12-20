@@ -1,5 +1,4 @@
 from checkers import game
-from checkers.board import Board
 
 
 class Game(game.Game):
