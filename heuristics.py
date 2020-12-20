@@ -70,3 +70,56 @@ def h_num_of_centrally_positioned_kings(board: Board, player_num):
         lambda count, piece: count + (
             1 if piece.player == player_num and piece.position in central_positions and piece.king
             else 0), board.pieces, 0) / len(central_positions)
+
+
+bridge = {
+    1: [1, 3],
+    2: [32, 30]
+}
+
+oreo = {
+    1: [2, 7, 3],
+    2: [30, 26, 31]
+}
+
+triangle = {
+    1: [1, 6, 2],
+    2: [32, 27, 31]
+}
+
+dog = {
+    1: [1, 5],
+    2: [32, 28]
+}
+
+
+def is_piece(piece: Piece, player_num: int):
+    return piece and piece.player == player_num
+
+
+def h_dog_pattern(board: Board, player_num):
+    if player_num == 1:
+        return is_piece(board.searcher.get_piece_by_position(1), 1) \
+               and is_piece(board.searcher.get_piece_by_position(5), 2)
+    else:
+        return is_piece(board.searcher.get_piece_by_position(32), 2) \
+               and is_piece(board.searcher.get_piece_by_position(28), 1)
+
+
+def h_pattern(board: Board, player_num, pattern):
+    for pos in pattern[player_num]:
+        if not is_piece(board.searcher.get_piece_by_position(pos), player_num):
+            return 0
+    return 1
+
+
+def h_triangle_pattern(board: Board, player_num):
+    return h_pattern(board, player_num, triangle)
+
+
+def h_oreo_pattern(board: Board, player_num):
+    return h_pattern(board, player_num, oreo)
+
+
+def h_bridge_pattern(board: Board, player_num):
+    return h_pattern(board, player_num, bridge)

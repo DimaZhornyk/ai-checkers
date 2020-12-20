@@ -64,11 +64,23 @@ class Minimax:
     def count_heuristics(self, game):
         board = game.board
         player_num = game.whose_turn()
+        enemy_num = 1 if player_num == 2 else 2
         # Number of pawns
-        heurs = [h_peices_num(board, player_num),  # Number of pawns
-                 h_kings_num(board, player_num),  # Number of kings
-                 h_safe_pieces(board, player_num),  # Number of attacking pawns (i.e. positioned in three topmost rows)
-                 h_safe_kings(board, player_num),  #
-                 h_num_of_movable_pawns(board, player_num),
-                 h_num_of_movable_kings(board, player_num)]
+        heurs = [h_peices_num(board, player_num) - h_peices_num(board, enemy_num),  # Number of pawns
+                 h_kings_num(board, player_num) - h_kings_num(board, enemy_num),  # Number of kings
+                 h_safe_pieces(board, player_num) - h_safe_pieces(board, enemy_num),
+                 # Number of attacking pawns (i.e. positioned in three topmost rows)
+                 h_safe_kings(board, player_num) - h_safe_kings(board, enemy_num),  #
+
+                 h_num_of_centrally_positioned_pawns(board, player_num) -
+                 h_num_of_centrally_positioned_pawns(board, enemy_num),
+
+                 h_num_of_centrally_positioned_kings(board, player_num) -
+                 h_num_of_centrally_positioned_kings(board, enemy_num),
+
+                 h_bridge_pattern(board, player_num) - h_bridge_pattern(board, enemy_num),
+                 h_oreo_pattern(board, player_num) - h_oreo_pattern(board, enemy_num),
+                 h_triangle_pattern(board, player_num) - h_triangle_pattern(board, enemy_num),
+                 h_dog_pattern(board, player_num) - h_dog_pattern(board, enemy_num)]
+
         return heurs
