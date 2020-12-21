@@ -1,5 +1,4 @@
 import copy
-import multiprocessing as mp
 import random
 
 from game import Game
@@ -15,12 +14,9 @@ class Minimax:
     def best_move(self, game: Game, depth):
         root = Node(game, None)
         res = self.minimax(root, depth, float('-inf'), float('inf'))
-        print("RES VAlUE: ", res)
         for node in root.children:
-            print(node.weight)
             if node.weight == res:
                 return node.move
-        print("DIMA SOSI")
         return random.choice(game.get_possible_moves())
 
     def minimax(self, node: Node, depth, alpha, beta):
