@@ -2,63 +2,66 @@ import copy
 import multiprocessing as mp
 import random
 
+from game import Game
 from heuristics import *
+from node import Node
 
 
 class Minimax:
 
-    def mp_new_move(self, game, depth, move, maximizing_player):
-        alpha = float("-inf")
-        new_game = copy.deepcopy(game)
-        new_game.move(move)
-        best_move = None
-        beta = self.minimax(new_game, depth, maximizing_player, float('-inf'), float('inf'))
-        if beta > alpha:
-            alpha = beta
-            best_move = move
-        return alpha, best_move
+    def __init__(self, player_number):
+        self.player_num = player_number
 
-    def best_move(self, game, depth):
-        cpu_count = int(mp.cpu_count() - 1)
-        with mp.Pool(processes=cpu_count) as pool:
-            res = pool.starmap(self.mp_new_move, [(game, depth - 1, move, True) for move in game.get_possible_moves()])
-        m_val = [0, random.choice(game.get_possible_moves())]
-        for item in res:
-            if item[0] > m_val[0]:
-                m_val = item
-        return m_val[1]
+    def best_move(self, game: Game, depth):
+        root = Node(game, None)
+        res = self.minimax(root, depth, float('-inf'), float('inf'))
+        print("RES VAlUE: ", res)
+        for node in root.children:
+            print(node.weight)
+            if node.weight == res:
+                return node.move
+        print("DIMA SOSI")
+        return random.choice(game.get_possible_moves())
 
-    def minimax(self, game, depth, isMaximizingPlayer, alpha, beta):
-        if depth == 0 or game.is_over():
-            return self.evaluate(self.count_heuristics(game))
+    def minimax(self, node: Node, depth, alpha, beta):
+        if depth == 0 or node.game.is_over():
+            node.weight = self.evaluate(self.count_heuristics(node.game))
+            return node.weight
 
-        if isMaximizingPlayer:
+        if node.game.whose_turn() == self.player_num:
             value = float('-inf')
-            for move in game.get_possible_moves():
-                new_game = copy.deepcopy(game)
+            for move in node.game.get_possible_moves():
+                new_game = copy.deepcopy(node.game)
                 new_game.move(move)
-                value = max(self.minimax(new_game, depth - 1, False, alpha, beta), value)
+                new_node = Node(new_game, move)
+                node.add_children(new_node)
+                value = max(self.minimax(new_node, depth - 1, alpha, beta), value)
+                node.weight = value
                 alpha = max(alpha, value)
                 if alpha >= beta:
                     break
             return value
         else:
             value = float('inf')
-            for move in game.get_possible_moves():
-                new_game = copy.deepcopy(game)
+            for move in node.game.get_possible_moves():
+                new_game = copy.deepcopy(node.game)
                 new_game.move(move)
-                value = min(self.minimax(new_game, depth - 1, False, alpha, beta), value)
+                new_node = Node(new_game, move)
+                node.add_children(new_node)
+                value = min(self.minimax(new_node, depth - 1, alpha, beta), value)
+                node.weight = value
                 alpha = min(alpha, value)
-                if beta <= alpha:
+                if alpha <= beta:
                     break
             return value
 
     def evaluate(self, heuristics):
         res = 0
-        coefficients = [5, 7, 2, 2, 1, 1]
+        coefficients = [10, 7, 2, 2, -30, -30, 100, 100, 100, 100]
+        # coefficients = [5, 6, -3, -3, 5, 5, 5, 5]
         for i in range(len(heuristics)):
             res += heuristics[i] * coefficients[i]
-        # res = sum(heuristics) / len(heuristics)
+        # print("RESULT: ", res)
         return res
 
     def count_heuristics(self, game):
@@ -68,19 +71,19 @@ class Minimax:
         # Number of pawns
         heurs = [h_peices_num(board, player_num) - h_peices_num(board, enemy_num),  # Number of pawns
                  h_kings_num(board, player_num) - h_kings_num(board, enemy_num),  # Number of kings
-                 h_safe_pieces(board, player_num) - h_safe_pieces(board, enemy_num),
+
+                 h_safe_pieces(board, player_num),
                  # Number of attacking pawns (i.e. positioned in three topmost rows)
-                 h_safe_kings(board, player_num) - h_safe_kings(board, enemy_num),  #
+                 h_safe_kings(board, player_num),  #
 
-                 h_num_of_centrally_positioned_pawns(board, player_num) -
-                 h_num_of_centrally_positioned_pawns(board, enemy_num),
+                 h_num_of_centrally_positioned_pawns(board, player_num),
 
-                 h_num_of_centrally_positioned_kings(board, player_num) -
-                 h_num_of_centrally_positioned_kings(board, enemy_num),
+                 h_num_of_centrally_positioned_kings(board, player_num),
 
-                 h_bridge_pattern(board, player_num) - h_bridge_pattern(board, enemy_num),
-                 h_oreo_pattern(board, player_num) - h_oreo_pattern(board, enemy_num),
-                 h_triangle_pattern(board, player_num) - h_triangle_pattern(board, enemy_num),
-                 h_dog_pattern(board, player_num) - h_dog_pattern(board, enemy_num)]
-
+                 h_bridge_pattern(board, player_num),
+                 h_oreo_pattern(board, player_num),
+                 h_triangle_pattern(board, player_num),
+                 h_dog_pattern(board, player_num)
+                 ]
+        print(heurs)
         return heurs

@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 class ApiTester:
     def __init__(self, loop, player_num):
-        self._api_url = 'http://docker.for.win.localhost:8081'
+        self._api_url = 'http://localhost:8081'
         self._game = Game()
         self._session = aiohttp.ClientSession()
         self._player_num = player_num
@@ -32,6 +32,8 @@ class ApiTester:
                 'color': res['color'],
                 'token': res['token']
             }
+            self.minimax = Minimax(self._player_num)
+            print("PLAYER_NUM", self._player_num)
 
     async def _make_move(self, move):
         json = {'move': move}
@@ -50,7 +52,6 @@ class ApiTester:
             return (await resp.json())['data']
 
     async def _play_game(self):
-        self.minimax = Minimax()
         current_game_progress = await self._get_game()
         is_finished = current_game_progress['is_finished']
         is_started = current_game_progress['is_started']
@@ -103,7 +104,7 @@ class ApiTester:
         await self._session.close()
 
     def heuristic(self):
-        return self.minimax.best_move(self._game, 3)
+        return self.minimax.best_move(self._game, 4)
 
 
 async def start_bot(player_name):
