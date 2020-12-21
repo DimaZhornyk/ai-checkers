@@ -104,7 +104,7 @@ class ApiTester:
         await self._session.close()
 
     def heuristic(self):
-        return self.minimax.best_move(self._game, 4)
+        return self.minimax.best_move(self._game, 5)
 
 
 async def start_bot(player_name):
